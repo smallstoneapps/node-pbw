@@ -1,0 +1,11 @@
+{
+  "name": "node-pbw",
+  "version": "0.0.1",
+  "description": "A library to parse PBW files, which are the app package files for the Pebble smartwatch.",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "Matthew Tole",
+  "license": "MIT"
+}
