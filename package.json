@@ -4,8 +4,16 @@
   "description": "A library to parse PBW files, which are the app package files for the Pebble smartwatch.",
   "main": "index.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "mocha"
   },
   "author": "Matthew Tole",
-  "license": "MIT"
+  "license": "MIT",
+  "dependencies": {
+    "adm-zip": "~0.4.3",
+    "underscore": "~1.5.2",
+    "underscore.string": "~2.3.3"
+  },
+  "devDependencies": {
+    "should": "~2.0.2"
+  }
 }
