@@ -3,6 +3,7 @@ module.exports = (function () {
   var AdmZip = require('adm-zip');
   var url = require('url');
   var http = require('http');
+  var request = require('request');
   var _ = require('underscore');
       _.str = require('underscore.string');
 
@@ -32,53 +33,26 @@ module.exports = (function () {
   }
 
   function fetchPbw(pbwUrl, callback) {
-    var options = {
-      host: url.parse(pbwUrl).host,
-      port: 80,
-      path: url.parse(pbwUrl).pathname
-    };
-    http.get(options, function (res) {
-      var data = [];
-      var dataLen = 0; 
-
-      res.on('data', function (chunk) {
-        data.push(chunk);
-        dataLen += chunk.length;
-      });
-
-      res.on('error', function (err) {
-        return callback(err);
-      });
-
-      res.on('end', function () {
-        var buf = new Buffer(dataLen);
-        for (var i=0, len = data.length, pos = 0; i < len; i++) { 
-          data[i].copy(buf, pos); 
-          pos += data[i].length; 
-        } 
-        try {
-          var zip = new AdmZip(buf); 
-          return callback(null, zip);
-        }
-        catch (e) {
-          return callback(e);
-        }
-      });
+    request(pbwUrl, { encoding: null }, function (err, response, body) {
+      var zip = new AdmZip(body);
+      return callback(null, zip);
     });
   }
 
   function getAppInfo(pbw, callback) {
-    var appinfo = getZipEntryByName(pbw, 'appinfo.json');
-    if (appinfo) {
+    if (pbw.getEntry('appinfo.json')) {
       return getAppInfoV2(pbw, callback);
     }
-    else {
+    else if (pbw.getEntry('pebble-app.bin')) {
       return getAppInfoV1(pbw, callback);
+    }
+    else {
+      return callback(new Error('Not a valid PBW file.'));
     }
   }
 
   function getAppInfoV1(pbw, callback) {
-    var bin = getZipEntryByName(pbw, 'pebble-app.bin');
+    var bin = pbw.getEntry('pebble-app.bin');
     var binData = bin.getData();
     var binName = new Buffer(32);
     var binCompany = new Buffer(32);
@@ -93,17 +67,23 @@ module.exports = (function () {
       + strUuid.substr(16, 4) + '-'
       + strUuid.substr(20, 12);
 
+    var manifest = JSON.parse(pbw.readAsText(pbw.getEntry('manifest.json')));
+
     var app = {
       name: _.str.trim(binName.toString(), '\0'),
       company: _.str.trim(binCompany.toString(), '\0'),
       uuid: strUuid,
-      pebbleVersion: 1
+      pebbleVersion: 1,
+      firmwareVersion: manifest.application.reqFwVer
     };
+
     return callback(null, app);
   }
 
   function getAppInfoV2(pbw, callback) {
-    var appinfo = JSON.parse(pbw.readAsText(getZipEntryByName(pbw, 'appinfo.json')));
+    var appinfo = JSON.parse(pbw.readAsText(pbw.getEntry('appinfo.json')));
+    var manifest = JSON.parse(pbw.readAsText(pbw.getEntry('manifest.json')));
+
     var app = {
       name: appinfo.shortName,
       longName: appinfo.longName,
@@ -114,13 +94,13 @@ module.exports = (function () {
         label: appinfo.versionLabel
       },
       type: (appinfo.watchapp.watchface ? 'watchface' : 'app'),
-      pebbleVersion: 2
+      pebbleVersion: 2,
+      sdk: {
+        major: manifest.application.sdk_version.major,
+        minor: manifest.application.sdk_version.minor
+      }
     };
     return callback(null, app);
-  }
-
-  function getZipEntryByName(zip, name) {
-    return _.find(zip.getEntries(), function (entry) { return entry.name === name });
   }
   
 }());

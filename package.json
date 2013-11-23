@@ -1,6 +1,6 @@
 {
   "name": "node-pbw",
-  "version": "0.0.1",
+  "version": "0.0.2",
   "description": "A library to parse PBW files, which are the app package files for the Pebble smartwatch.",
   "main": "index.js",
   "scripts": {
@@ -11,7 +11,8 @@
   "dependencies": {
     "adm-zip": "~0.4.3",
     "underscore": "~1.5.2",
-    "underscore.string": "~2.3.3"
+    "underscore.string": "~2.3.3",
+    "request": "~2.27.0"
   },
   "devDependencies": {
     "should": "~2.0.2"
